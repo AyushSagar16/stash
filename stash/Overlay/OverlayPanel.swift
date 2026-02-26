@@ -1,11 +1,11 @@
 import Cocoa
 
-/// A non-activating floating panel for the Stash overlay.
-/// Floats above all other windows without stealing focus.
+/// A floating panel for the Stash overlay.
+/// Floats above other windows and can receive keyboard focus.
 class OverlayPanel: NSPanel {
     override init(
-        contentRect: NSRect = NSRect(x: 0, y: 0, width: 520, height: 120),
-        styleMask: NSWindow.StyleMask = [.borderless, .nonactivatingPanel, .fullSizeContentView],
+        contentRect: NSRect = NSRect(x: 0, y: 0, width: 520, height: 280),
+        styleMask: NSWindow.StyleMask = [.borderless, .fullSizeContentView],
         backing: NSWindow.BackingStoreType = .buffered,
         defer flag: Bool = false
     ) {

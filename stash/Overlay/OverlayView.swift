@@ -16,6 +16,10 @@ struct OverlayView: View {
 
     @State private var isVisible = false
 
+    private let inputPanelHeight: CGFloat = 280
+    private let listPanelHeight: CGFloat = 460
+    private let helpPanelHeight: CGFloat = 380
+
     private var mode: OverlayMode {
         appState.overlayMode
     }
@@ -34,11 +38,11 @@ struct OverlayView: View {
                         // Resize panel based on mode
                         switch newMode {
                         case .list, .done:
-                            onResizePanel(460)
+                            onResizePanel(listPanelHeight)
                         case .help:
-                            onResizePanel(380)
+                            onResizePanel(helpPanelHeight)
                         case .input:
-                            onResizePanel(120)
+                            onResizePanel(inputPanelHeight)
                         }
                     },
                     onFocusMode: onFocusMode,
@@ -50,7 +54,7 @@ struct OverlayView: View {
                     withAnimation(.easeInOut(duration: 0.12)) {
                         appState.overlayMode = .input
                     }
-                    onResizePanel(120)
+                    onResizePanel(inputPanelHeight)
                 }
 
             case .done:
@@ -58,7 +62,7 @@ struct OverlayView: View {
                     withAnimation(.easeInOut(duration: 0.12)) {
                         appState.overlayMode = .input
                     }
-                    onResizePanel(120)
+                    onResizePanel(inputPanelHeight)
                 }
 
             case .help:
@@ -66,7 +70,7 @@ struct OverlayView: View {
                     withAnimation(.easeInOut(duration: 0.12)) {
                         appState.overlayMode = .input
                     }
-                    onResizePanel(120)
+                    onResizePanel(inputPanelHeight)
                 }
             }
         }

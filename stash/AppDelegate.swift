@@ -68,7 +68,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         let screen = NSScreen.main ?? NSScreen.screens.first!
         let screenFrame = screen.visibleFrame
         let panelWidth: CGFloat = 520
-        let inputHeight: CGFloat = 120
+        let inputHeight: CGFloat = 280
         let x = screenFrame.origin.x + (screenFrame.width - panelWidth) / 2
         let y = screenFrame.origin.y + (screenFrame.height - inputHeight) / 2 + 100
         panel.setFrame(NSRect(x: x, y: y, width: panelWidth, height: inputHeight), display: false)
@@ -99,6 +99,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         panel.alphaValue = 0
         panel.orderFrontRegardless()
         panel.makeKeyAndOrderFront(nil)
+        focusOverlayInput(in: panel)
 
         // Animate in
         NSAnimationContext.runAnimationGroup { context in
@@ -125,6 +126,36 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             }
             return event
         }
+    }
+
+    private func focusOverlayInput(in panel: NSPanel, attemptsRemaining: Int = 12) {
+        guard attemptsRemaining > 0 else { return }
+
+        if let contentView = panel.contentView,
+           let textField = firstEditableTextField(in: contentView) {
+            panel.makeFirstResponder(textField)
+            if panel.firstResponder === textField {
+                return
+            }
+        }
+
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.03) { [weak self] in
+            self?.focusOverlayInput(in: panel, attemptsRemaining: attemptsRemaining - 1)
+        }
+    }
+
+    private func firstEditableTextField(in root: NSView) -> NSTextField? {
+        if let textField = root as? NSTextField, textField.isEditable, !textField.isHidden {
+            return textField
+        }
+
+        for subview in root.subviews {
+            if let found = firstEditableTextField(in: subview) {
+                return found
+            }
+        }
+
+        return nil
     }
 
     private func resizePanel(to newHeight: CGFloat) {

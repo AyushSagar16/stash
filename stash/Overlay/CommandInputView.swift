@@ -1,4 +1,5 @@
 import SwiftUI
+import AppKit
 
 struct CommandInputView: View {
     @ObservedObject var appState: AppState
@@ -14,6 +15,10 @@ struct CommandInputView: View {
     @State private var errorMessage: String?
     @State private var errorOpacity: Double = 0
     @FocusState private var isInputFocused: Bool
+
+    private var previewTasks: [StashTask] {
+        appState.activeTasks(in: selectedTier)
+    }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
@@ -82,15 +87,68 @@ struct CommandInputView: View {
 
                 Spacer()
 
-                Text("Tab to cycle • Esc to close")
+                Text("Tab to switch tier • Click task to complete • Esc to close")
                     .font(.system(size: 10, design: .monospaced))
                     .foregroundColor(.gray.opacity(0.4))
             }
             .padding(.horizontal, 16)
             .padding(.bottom, 12)
+
+            if !showCommandPalette {
+                Divider()
+                    .background(Color.white.opacity(0.08))
+
+                VStack(alignment: .leading, spacing: 0) {
+                    HStack(spacing: 6) {
+                        Circle()
+                            .fill(selectedTier.color)
+                            .frame(width: 7, height: 7)
+
+                        Text("\(selectedTier.shortLabel) Tasks")
+                            .font(.system(size: 12, weight: .semibold, design: .monospaced))
+                            .foregroundColor(selectedTier.color)
+
+                        Text("\(previewTasks.count)")
+                            .font(.system(size: 10, weight: .medium, design: .monospaced))
+                            .foregroundColor(.white.opacity(0.5))
+                            .padding(.horizontal, 6)
+                            .padding(.vertical, 2)
+                            .background(Color.white.opacity(0.08))
+                            .clipShape(Capsule())
+
+                        Spacer()
+                    }
+                    .padding(.horizontal, 16)
+                    .padding(.top, 10)
+                    .padding(.bottom, 6)
+
+                    if previewTasks.isEmpty {
+                        Text("No \(selectedTier.shortLabel) tasks")
+                            .font(.system(size: 12, design: .monospaced))
+                            .foregroundColor(.gray)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                            .padding(.horizontal, 16)
+                            .padding(.vertical, 12)
+                    } else {
+                        ScrollView {
+                            VStack(alignment: .leading, spacing: 0) {
+                                ForEach(previewTasks) { task in
+                                    PreviewTaskRow(task: task) {
+                                        completePreviewTask(task)
+                                    }
+                                }
+                            }
+                        }
+                        .frame(maxHeight: 102)
+                    }
+                }
+            }
         }
         .onAppear {
-            isInputFocused = true
+            requestInputFocus()
+        }
+        .onReceive(NotificationCenter.default.publisher(for: NSApplication.didBecomeActiveNotification)) { _ in
+            requestInputFocus()
         }
         .onKeyPress(.tab) {
             cycleTier()
@@ -111,6 +169,16 @@ struct CommandInputView: View {
         NSHapticFeedbackManager.defaultPerformer.perform(.levelChange, performanceTime: .now)
     }
 
+    private func requestInputFocus() {
+        DispatchQueue.main.async {
+            isInputFocused = true
+        }
+
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.05) {
+            isInputFocused = true
+        }
+    }
+
     private func handleSubmit() {
         let trimmed = inputText.trimmingCharacters(in: .whitespacesAndNewlines)
 
@@ -129,6 +197,11 @@ struct CommandInputView: View {
             NSHapticFeedbackManager.defaultPerformer.perform(.alignment, performanceTime: .now)
             inputText = ""
         }
+    }
+
+    private func completePreviewTask(_ task: StashTask) {
+        appState.completeTask(task)
+        NSHapticFeedbackManager.defaultPerformer.perform(.generic, performanceTime: .now)
     }
 
     private func handleCommandString(_ command: String) {
@@ -245,6 +318,43 @@ struct CommandInputView: View {
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
                 errorMessage = nil
             }
+        }
+    }
+}
+
+private struct PreviewTaskRow: View {
+    let task: StashTask
+    let onComplete: () -> Void
+
+    @State private var isHovered = false
+
+    var body: some View {
+        Button(action: onComplete) {
+            HStack(spacing: 8) {
+                Image(systemName: "checkmark.circle")
+                    .font(.system(size: 12, weight: .regular))
+                    .foregroundColor(.white.opacity(0.45))
+
+                Text(task.title)
+                    .font(.system(size: 12, design: .monospaced))
+                    .foregroundColor(.white.opacity(0.9))
+                    .lineLimit(1)
+
+                Spacer()
+
+                Text(task.relativeTimeString)
+                    .font(.system(size: 10, design: .monospaced))
+                    .foregroundColor(.gray.opacity(0.6))
+            }
+            .padding(.horizontal, 16)
+            .padding(.vertical, 8)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .background(isHovered ? Color.white.opacity(0.05) : Color.clear)
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .onHover { hovering in
+            isHovered = hovering
         }
     }
 }
