@@ -1,0 +1,56 @@
+# Xcode
+#
+# gitignore contributors: writers on GitHub
+
+## User settings
+xcuserdata/
+
+## Apple designs
+*.mode1v3
+*.mode2v3
+*.perspectivev3
+!default.mode1v3
+!default.mode2v3
+!default.perspectivev3
+
+## Xcode 8 and later
+DerivedData/
+
+# Git
+.DS_Store
+
+# Swift Package Manager
+#
+# Add this line if you want to avoid checking in source code from Swift packages.
+.build/
+
+# Packages and Dependencies
+#
+# If you are using Swift Package Manager, you may want to ignore Package.resolved
+# if you want to always use the latest version of your dependencies.
+# However, for apps, it's usually recommended to commit Package.resolved.
+# Package.resolved
+
+# CocoaPods
+# Pods/
+
+# Miscellaneous
+*.xccheckout
+*.moved-aside
+*.xcuserstate
+*.itunesbackup
+*.bak
+*.moved-aside
+*.sql
+*.xcworkspace/
+!default.xcworkspace
+
+# Fastlane
+fastlane/report.xml
+fastlane/Preview.html
+fastlane/screenshots/**/*.png
+fastlane/test_output
+
+# Code Injection
+logs/
+
