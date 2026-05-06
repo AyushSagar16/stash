@@ -12,11 +12,31 @@ The visual is Spotlight; the input semantics are terminal. You type commands, hi
 open Stash.app               # launch the daemon
 ```
 
+## Release package
+
+The public build is an unsigned drag-to-Applications DMG:
+
+```sh
+./scripts/generate_icon.sh   # only needed after changing Resources/AppIcon.svg
+./scripts/package_dmg.sh     # writes dist/Stash-v0.1.0.dmg
+```
+
+To install from the DMG, open it and drag **Stash.app** to **Applications**.
+Because the app is not Developer ID signed or notarized yet, macOS may block
+the first launch. If that happens, right-click **Stash.app**, choose **Open**,
+then confirm the launch.
+
 ## First-run setup (do this once)
 
-The daemon is invisible — no Dock icon, no menu bar icon. Two one-time grants:
+The daemon is invisible — no Dock icon, no menu bar icon. There are two
+one-time permission grants, plus a stable `/Applications` install:
 
-### 1. Accessibility (so the hotkey works)
+### 1. Notifications
+
+Allow notifications when prompted. Stash uses local notifications for L1 tasks
+that are due soon.
+
+### 2. Accessibility (so the hotkey works)
 The first time you launch, macOS asks for Accessibility permission. If you missed the prompt:
 
 - **System Settings → Privacy & Security → Accessibility**
@@ -25,7 +45,7 @@ The first time you launch, macOS asks for Accessibility permission. If you misse
 
 Without this, the global double-Control hotkey will not fire.
 
-### 2. Install to `/Applications` (so launch-at-login persists across reboots)
+### 3. Install to `/Applications` (so launch-at-login persists across reboots)
 
 `SMAppService` registers a LaunchAgent pointing at the current bundle path. If you keep `Stash.app` in this project folder, the LaunchAgent will get a stale path the next time you rebuild. To make it permanent:
 
@@ -96,7 +116,7 @@ kill -USR1 $(pgrep -x Stash)
 pkill -x Stash
 
 # Unregister launch-at-login
-launchctl print gui/$UID/com.stash.app           # inspect
+launchctl print gui/$UID/com.ayushsagar.stash    # inspect
 osascript -e 'tell application "Stash" to quit'  # if it ignores pkill
 ```
 

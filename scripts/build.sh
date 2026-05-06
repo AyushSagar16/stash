@@ -19,6 +19,9 @@ rm -rf "$APP"
 mkdir -p "$APP/Contents/MacOS" "$APP/Contents/Resources"
 cp "$BIN" "$APP/Contents/MacOS/Stash"
 cp Resources/Info.plist "$APP/Contents/Info.plist"
+if [[ -f Resources/AppIcon.icns ]]; then
+  cp Resources/AppIcon.icns "$APP/Contents/Resources/AppIcon.icns"
+fi
 chmod +x "$APP/Contents/MacOS/Stash"
 
 # Ad-hoc codesign so accessibility/notification permissions persist across rebuilds.
