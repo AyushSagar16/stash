@@ -8,24 +8,7 @@ extension Notification.Name {
     static let stashPanelDidHide = Notification.Name("stash.panel.didHide")
 }
 
-/// Hosting controller that surfaces SwiftUI's preferred content size changes
-/// so the enclosing panel can resize to fit.
-final class StashHostingController<Content: View>: NSHostingController<Content> {
-    var onPreferredSizeChange: ((NSSize) -> Void)?
-
-    override var preferredContentSize: NSSize {
-        get { super.preferredContentSize }
-        set {
-            super.preferredContentSize = newValue
-            // Defer to the next runloop tick — calling setFrame from inside
-            // SwiftUI's layout pass would re-enter rendering and can recurse.
-            let snapshot = newValue
-            DispatchQueue.main.async { [weak self] in
-                self?.onPreferredSizeChange?(snapshot)
-            }
-        }
-    }
-}
+final class StashHostingController<Content: View>: NSHostingController<Content> {}
 
 final class OverlayPanel: NSPanel {
     /// Minimal/initial size before SwiftUI reports its real preferred size.
@@ -84,7 +67,7 @@ final class OverlayPanel: NSPanel {
 
     func show() {
         recomputeAnchor()
-        layout(to: frame.size)
+        adopt(contentSize: fittedContentSize())
         makeKeyAndOrderFront(nil)
         NSApp.activate(ignoringOtherApps: true)
         NotificationCenter.default.post(name: .stashPanelDidShow, object: nil)
@@ -113,6 +96,18 @@ final class OverlayPanel: NSPanel {
             return
         }
         layout(to: size)
+    }
+
+    private func fittedContentSize() -> NSSize {
+        guard let view = contentViewController?.view else {
+            return Self.initialSize
+        }
+
+        view.layoutSubtreeIfNeeded()
+        let fitting = view.fittingSize
+        let width = max(Self.initialSize.width, fitting.width)
+        let height = max(Self.initialSize.height, fitting.height)
+        return NSSize(width: width, height: height)
     }
 
     private func recomputeAnchor() {

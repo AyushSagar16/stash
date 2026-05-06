@@ -1,10 +1,12 @@
-# Stash v0.1.0 Release Notes
+# Stash v0.1.1 Release Notes
 
 Stash is distributed as an unsigned macOS DMG for this release.
 
+This patch fixes a crash that could happen when the overlay was shown.
+
 ## Install
 
-1. Download `Stash-v0.1.0.dmg` from the GitHub Release.
+1. Download `Stash-v0.1.1.dmg` from the GitHub Release.
 2. Open the DMG.
 3. Drag `Stash.app` into `Applications`.
 4. Launch from `Applications`.

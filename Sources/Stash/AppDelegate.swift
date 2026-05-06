@@ -58,10 +58,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             rootView: ContentView(runner: runner)
                 .modelContainer(store.container)
         )
-        hosting.sizingOptions = [.preferredContentSize]
-        hosting.onPreferredSizeChange = { [weak panel] size in
-            panel?.adopt(contentSize: size)
-        }
         panel.contentViewController = hosting
         self.panel = panel
 
