@@ -1,10 +1,24 @@
 import SwiftData
 import SwiftUI
 
+private struct ScrollContentHeightKey: PreferenceKey {
+    static var defaultValue: CGFloat = 0
+    static func reduce(value: inout CGFloat, nextValue: () -> CGFloat) {
+        value = nextValue()
+    }
+}
+
+private struct ScrollViewportHeightKey: PreferenceKey {
+    static var defaultValue: CGFloat = 0
+    static func reduce(value: inout CGFloat, nextValue: () -> CGFloat) {
+        value = nextValue()
+    }
+}
+
 struct ContentView: View {
     let runner: CommandRunner
 
-    @Query(sort: \StashTask.createdAt) private var allTasks: [StashTask]
+    @Query(sort: \StashTask.createdAt, animation: .easeOut(duration: 0.22)) private var allTasks: [StashTask]
 
     @State private var input: String = ""
     @State private var hint: String = ""
@@ -12,6 +26,8 @@ struct ContentView: View {
     @State private var pendingTier: Tier = .L1
     @State private var selectedTaskID: String?
     @State private var inputHistory = InputHistory()
+    @State private var scrollContentHeight: CGFloat = 0
+    @State private var scrollViewportHeight: CGFloat = 0
     @FocusState private var inputFocused: Bool
 
     var body: some View {
@@ -34,7 +50,7 @@ struct ContentView: View {
             if !visibleTiers.isEmpty {
                 Divider().opacity(0.25)
 
-                ScrollView(.vertical, showsIndicators: false) {
+                ScrollView(.vertical, showsIndicators: true) {
                     VStack(alignment: .leading, spacing: 14) {
                         ForEach(visibleTiers) { tier in
                             TierSectionView(
@@ -48,8 +64,33 @@ struct ContentView: View {
                     .padding(.horizontal, 18)
                     .padding(.vertical, 12)
                     .frame(maxWidth: .infinity, alignment: .leading)
+                    .background(
+                        GeometryReader { geo in
+                            Color.clear.preference(
+                                key: ScrollContentHeightKey.self,
+                                value: geo.size.height
+                            )
+                        }
+                    )
                 }
                 .frame(maxHeight: Palette.panelMaxHeight)
+                .background(
+                    GeometryReader { geo in
+                        Color.clear.preference(
+                            key: ScrollViewportHeightKey.self,
+                            value: geo.size.height
+                        )
+                    }
+                )
+                .onPreferenceChange(ScrollContentHeightKey.self) { scrollContentHeight = $0 }
+                .onPreferenceChange(ScrollViewportHeightKey.self) { scrollViewportHeight = $0 }
+                .overlay(alignment: .bottom) {
+                    if hasOverflow {
+                        overflowIndicator
+                            .transition(.opacity)
+                    }
+                }
+                .animation(.easeOut(duration: 0.18), value: hasOverflow)
             }
         }
         .frame(width: Palette.panelWidth)
@@ -78,6 +119,31 @@ struct ContentView: View {
     /// Tiers that currently have at least one open task — drives dynamic panel height.
     private var visibleTiers: [Tier] {
         Tier.allCases.filter { !tasks(for: $0).isEmpty }
+    }
+
+    /// True when the task list is taller than its capped viewport — drives the
+    /// "more below" indicator.
+    private var hasOverflow: Bool {
+        scrollContentHeight > scrollViewportHeight + 1
+    }
+
+    private var overflowIndicator: some View {
+        HStack(spacing: 4) {
+            Image(systemName: "chevron.down")
+                .font(.system(size: 9, weight: .semibold))
+            Text("scroll for more")
+                .font(Palette.metaFont)
+        }
+        .foregroundStyle(.secondary)
+        .padding(.horizontal, 8)
+        .padding(.vertical, 3)
+        .background(
+            Capsule()
+                .fill(.thinMaterial)
+                .overlay(Capsule().stroke(Color.primary.opacity(0.08), lineWidth: 0.5))
+        )
+        .padding(.bottom, 8)
+        .allowsHitTesting(false)
     }
 
     /// Open tasks across all tiers in display order — used for complete-mode arrow navigation.
