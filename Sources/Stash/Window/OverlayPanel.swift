@@ -8,7 +8,29 @@ extension Notification.Name {
     static let stashPanelDidHide = Notification.Name("stash.panel.didHide")
 }
 
-final class StashHostingController<Content: View>: NSHostingController<Content> {}
+final class StashHostingController<Content: View>: NSHostingController<Content> {
+    weak var stashPanel: OverlayPanel?
+    /// Guards against the AppKit ↔ SwiftUI layout feedback loop:
+    /// our resize triggers a new layout, which calls viewDidLayout, which
+    /// would otherwise call resize again. The `< 1pt` tolerance in the
+    /// dispatch below converges fittingSize jitter; this flag stops re-entry
+    /// inside the same synchronous layout pass.
+    private var isApplyingSize = false
+
+    override func viewDidLayout() {
+        super.viewDidLayout()
+        guard let panel = stashPanel, !isApplyingSize else { return }
+        let size = view.fittingSize
+        guard size.width > 0, size.height > 0 else { return }
+        let current = panel.frame.size
+        if abs(current.width - size.width) < 1, abs(current.height - size.height) < 1 {
+            return
+        }
+        isApplyingSize = true
+        panel.adopt(contentSize: size)
+        isApplyingSize = false
+    }
+}
 
 final class OverlayPanel: NSPanel {
     /// Minimal/initial size before SwiftUI reports its real preferred size.
